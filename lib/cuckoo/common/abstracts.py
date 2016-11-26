@@ -392,6 +392,14 @@ class LibVirtMachinery(Machinery):
             self._disconnect(conn)
             raise CuckooMachineError("No snapshot found for virtual machine "
                                      "{0}".format(label))
+        # Attempt to boot the VM (create domain) if it's powered off
+        # This should address use of offline snapshots for fast clones/other uses.
+        if self._status(label) == self.POWEROFF:
+            try:
+                self.vms[label].create()
+            except libvirt.libvirtError:
+                raise CuckooMachineError("Unable to create domain for "
+                                         "virtual machine {0}".format(label))
 
         # Check state.
         self._wait_status(label, self.RUNNING)
